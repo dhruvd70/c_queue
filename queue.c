@@ -15,16 +15,16 @@ static node_t *Create_Node(QueueHandle_t *Queue, void *data)
     return node;
 }
 
-int CreateQueue_Generic(QueueHandle_t* QueueHandle, uint16_t Element_Size)
+static int CreateQueue(QueueHandle_t* QueueHandle, uint16_t Element_Size, uint16_t Queue_Length, bool type)
 {
     QueueHandle_t* Queue = (QueueHandle_t *)malloc(sizeof(QueueHandle_t));
     if(Queue == NULL) {
         printf("Queue Creation Failed\n");
         return FAILURE;
     }
-    QueueHandle->isStatic = false;
+    QueueHandle->isStatic = type;
     QueueHandle->CurrentQ_Length = 0;
-    QueueHandle->MaxQ_Length = -1;
+    (type) ? (QueueHandle->MaxQ_Length = Queue_Length) : (QueueHandle->MaxQ_Length = -1);
     QueueHandle->Item_size = Element_Size;
     QueueHandle->head = NULL;
     QueueHandle->tail = NULL;
@@ -32,31 +32,14 @@ int CreateQueue_Generic(QueueHandle_t* QueueHandle, uint16_t Element_Size)
     return SUCCESS;
 }
 
-int CreateQueue_StaticLength(QueueHandle_t* QueueHandle, uint16_t Element_Size, uint16_t Queue_Length)
-{
-    QueueHandle_t* Queue = (QueueHandle_t *)malloc(sizeof(QueueHandle_t));
-    if(Queue == NULL) {
-        printf("Queue Creation Failed\n");
-        return FAILURE;
-    }
-    QueueHandle->isStatic = false;
-    QueueHandle->CurrentQ_Length = 0;
-    QueueHandle->MaxQ_Length = Queue_Length;
-    QueueHandle->Item_size = Element_Size;
-    QueueHandle->head = NULL;
-    QueueHandle->tail = NULL;
-    
-    return SUCCESS;
-}
-
-int QueueSend(QueueHandle_t *Queue, void *txBuff)
+static int QueueSend(QueueHandle_t *Queue, void *txBuff, bool toFront)
 {
     if(txBuff == NULL) {
         goto error;
     }
 
     if(Queue->isStatic) {
-        if(Queue->CurrentQ_Length = Queue->MaxQ_Length) {
+        if(Queue->CurrentQ_Length == Queue->MaxQ_Length) {
             printf("Q-Drop, Queue is Full\n");
             goto error;
         }
@@ -79,52 +62,16 @@ int QueueSend(QueueHandle_t *Queue, void *txBuff)
     }
     else {
         if(Queue->head != NULL && Queue->tail != NULL) {
-            Queue->tail->pNext = newNode;
-            Queue->tail = Queue->tail->pNext;
-            Queue->CurrentQ_Length++;
-        }
-        else {
-            goto error;
-        }
-    }
-    return SUCCESS;
-error:
-    return FAILURE;
-}
-
-int QueueSendToFront(QueueHandle_t *Queue, void *txBuff)
-{
-    if(txBuff == NULL) {
-        goto error;
-    }
-
-    if(Queue->isStatic) {
-        if(Queue->CurrentQ_Length = Queue->MaxQ_Length) {
-            printf("Q-Drop, Queue is Full\n");
-            goto error;
-        }
-    }
-
-    node_t *newNode = Create_Node(Queue, txBuff);
-    if(newNode == NULL) {
-        goto error;
-    }
-
-    if(Queue->CurrentQ_Length == 0) {
-        if(Queue->head == NULL && Queue->tail == NULL) {
-            Queue->head = newNode;
-            Queue->tail = newNode;
-            Queue->CurrentQ_Length++; 
-        }
-        else {
-            goto error;
-        }
-    }
-    else {
-        if(Queue->head != NULL && Queue->tail != NULL) {
-            newNode->pNext = Queue->head;
-            Queue->head = newNode;
-            Queue->CurrentQ_Length++;
+            if(toFront) {
+                newNode->pNext = Queue->head;
+                Queue->head = newNode;
+                Queue->CurrentQ_Length++;
+            }
+            else {
+                Queue->tail->pNext = newNode;
+                Queue->tail = Queue->tail->pNext;
+                Queue->CurrentQ_Length++;
+            }
         }
         else {
             goto error;

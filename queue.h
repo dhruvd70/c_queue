@@ -33,22 +33,26 @@ typedef struct QueueHandle_t
 /*
 *
 */
-int CreateQueue_Generic(QueueHandle_t* QueueHandle, uint16_t Element_Size);
+#define CreateQueue_Generic(QueueHandle, Element_Size)\
+    CreateQueue((QueueHandle), (Element_Size), 0, false)
 
 /*
 *
 */
-int CreateQueue_StaticLength(QueueHandle_t* QueueHandle, uint16_t Element_Size, uint16_t Queue_Length);
+#define CreateQueue_Static(QueueHandle, Element_Size, Queue_Length)\
+    CreateQueue((QueueHandle), (Element_Size), (Queue_Length), true)
 
 /*
 *
 */
-int QueueSend(QueueHandle_t *Queue, void *txBuff);
+#define Queue_SendToFront(Queue, txBuff)\
+    QueueSend((Queue), (txBuff), true)
 
 /*
 *
 */
-int QueueSendToFront(QueueHandle_t *Queue, void *txBuff);
+#define Queue_Send(Queue, txBuff)\
+    QueueSend((Queue), (txBuff), false)
 
 /*
 *
